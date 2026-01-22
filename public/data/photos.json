@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1",
+    "src": "/images/gemini-generated-image-600lsl600lsl600l.jpeg",
+    "title": "Mountain Vista",
+    "location": "Pacific Northwest",
+    "date": "2024",
+    "description": "A breathtaking view from the alpine trails, where the sky meets the peaks."
+  },
+  {
+    "id": "2",
+    "src": "/images/gemini-generated-image-ecd0iiecd0iiecd0.jpeg",
+    "title": "Forest Path",
+    "location": "Cascade Range",
+    "date": "2024",
+    "description": "Ancient trees line the misty path through old-growth forest."
+  },
+  {
+    "id": "3",
+    "src": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
+    "title": "Alpine Sunrise",
+    "location": "Mount Rainier",
+    "date": "2023",
+    "description": "First light breaking over the volcanic giant, painting the glaciers gold."
+  },
+  {
+    "id": "4",
+    "src": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+    "title": "Valley Mist",
+    "location": "Olympic Peninsula",
+    "date": "2023",
+    "description": "Morning fog rolling through the temperate rainforest valleys."
+  },
+  {
+    "id": "5",
+    "src": "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=800&q=80",
+    "title": "Summit View",
+    "location": "North Cascades",
+    "date": "2023",
+    "description": "The reward after a long climb - endless peaks stretching to the horizon."
+  },
+  {
+    "id": "6",
+    "src": "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80",
+    "title": "Starlit Peaks",
+    "location": "Snoqualmie Pass",
+    "date": "2024",
+    "description": "The Milky Way arching over snow-capped summits on a clear winter night."
+  }
+]
