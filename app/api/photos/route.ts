@@ -40,16 +40,17 @@ async function readPhotos(): Promise<Photo[]> {
 }
 
 async function writePhotos(photos: Photo[]): Promise<void> {
-  // Delete ALL old metadata blobs first to avoid duplicates
+  // Get existing blobs BEFORE writing new one
+  let oldBlobs: { url: string }[] = []
   try {
-    const { blobs } = await list({ prefix: "photos-metadata" })
-    await Promise.all(blobs.map((blob) => del(blob.url)))
+    const result = await list({ prefix: "photos-metadata" })
+    oldBlobs = result.blobs
   } catch (error) {
-    console.error("Error deleting old metadata:", error)
+    console.error("Error listing old metadata:", error)
   }
 
-  // Write new metadata with a timestamp to ensure uniqueness
-  const blob = await put(
+  // Write new metadata FIRST
+  const newBlob = await put(
     `photos-metadata-${Date.now()}.json`,
     JSON.stringify(photos, null, 2),
     {
@@ -57,8 +58,17 @@ async function writePhotos(photos: Photo[]): Promise<void> {
       contentType: "application/json",
     }
   )
+  console.log("Wrote metadata to:", newBlob.url)
 
-  console.log("Wrote metadata to:", blob.url)
+  // Only delete old blobs AFTER new one is successfully written
+  if (oldBlobs.length > 0) {
+    try {
+      await Promise.all(oldBlobs.map((blob) => del(blob.url)))
+      console.log(`Deleted ${oldBlobs.length} old metadata files`)
+    } catch (error) {
+      console.error("Error deleting old metadata:", error)
+    }
+  }
 }
 
 function verifyAuth(request: NextRequest): boolean {

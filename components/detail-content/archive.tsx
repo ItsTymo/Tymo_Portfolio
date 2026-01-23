@@ -69,7 +69,7 @@ export function ArchiveContent() {
       </div>
 
       <p className="font-scroll-body text-foreground leading-relaxed text-center">
-        Moments captured from trails, peaks, and wild places. Click any photo to explore.
+        Pictures I love from home and abroad. Click any photo to see more information.
       </p>
 
       {/* Sort Controls */}
