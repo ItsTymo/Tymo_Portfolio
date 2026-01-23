@@ -6,7 +6,7 @@ export const PhotoSchema = z.object({
   title: z.string().min(1, "Title is required"),
   location: z.string().min(1, "Location is required"),
   date: z.string().min(1, "Date is required"),
-  description: z.string().min(1, "Description is required"),
+  description: z.string(),
 })
 
 export const PhotosArraySchema = z.array(PhotoSchema)
