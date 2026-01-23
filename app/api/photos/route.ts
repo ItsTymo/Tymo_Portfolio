@@ -1,23 +1,40 @@
 import { NextRequest, NextResponse } from "next/server"
-import { promises as fs } from "fs"
-import path from "path"
+import { put, del, list } from "@vercel/blob"
 import { PhotosArraySchema, type Photo } from "@/lib/photos"
 
-const PHOTOS_FILE = path.join(process.cwd(), "public", "data", "photos.json")
-const GALLERY_DIR = path.join(process.cwd(), "public", "images", "gallery")
+const PHOTOS_METADATA_KEY = "photos-metadata.json"
 
 async function readPhotos(): Promise<Photo[]> {
   try {
-    const data = await fs.readFile(PHOTOS_FILE, "utf-8")
-    const parsed = JSON.parse(data)
-    return PhotosArraySchema.parse(parsed)
-  } catch {
+    const { blobs } = await list({ prefix: PHOTOS_METADATA_KEY })
+    if (blobs.length === 0) {
+      return []
+    }
+    const response = await fetch(blobs[0].url)
+    const data = await response.json()
+    return PhotosArraySchema.parse(data)
+  } catch (error) {
+    console.error("Error reading photos:", error)
     return []
   }
 }
 
 async function writePhotos(photos: Photo[]): Promise<void> {
-  await fs.writeFile(PHOTOS_FILE, JSON.stringify(photos, null, 2))
+  // Delete old metadata blob if it exists
+  try {
+    const { blobs } = await list({ prefix: PHOTOS_METADATA_KEY })
+    for (const blob of blobs) {
+      await del(blob.url)
+    }
+  } catch {
+    // Ignore delete errors
+  }
+
+  // Write new metadata
+  await put(PHOTOS_METADATA_KEY, JSON.stringify(photos, null, 2), {
+    access: "public",
+    contentType: "application/json",
+  })
 }
 
 function verifyAuth(request: NextRequest): boolean {
@@ -39,41 +56,67 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData()
+    const files = formData.getAll("images") as File[]
     const file = formData.get("image") as File | null
+    const titles = formData.getAll("titles") as string[]
+    const locations = formData.getAll("locations") as string[]
+    const dates = formData.getAll("dates") as string[]
+    const descriptions = formData.getAll("descriptions") as string[]
+
+    // Support both single and batch upload
     const title = formData.get("title") as string
     const location = formData.get("location") as string
     const date = formData.get("date") as string
     const description = formData.get("description") as string
 
-    if (!file || !title || !location || !date || !description) {
+    const photos = await readPhotos()
+    const newPhotos: Photo[] = []
+
+    // Batch upload
+    if (files.length > 0 && titles.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i]
+        if (!f || !titles[i]) continue
+
+        const blob = await put(`gallery/${Date.now()}-${i}-${f.name}`, f, {
+          access: "public",
+        })
+
+        const newPhoto: Photo = {
+          id: `${Date.now()}-${i}`,
+          src: blob.url,
+          title: titles[i] || f.name.replace(/\.[^/.]+$/, ""),
+          location: locations[i] || "Unknown",
+          date: dates[i] || new Date().getFullYear().toString(),
+          description: descriptions[i] || "",
+        }
+        newPhotos.push(newPhoto)
+      }
+    }
+    // Single upload (backward compatible)
+    else if (file && title) {
+      const blob = await put(`gallery/${Date.now()}-${file.name}`, file, {
+        access: "public",
+      })
+
+      const newPhoto: Photo = {
+        id: Date.now().toString(),
+        src: blob.url,
+        title,
+        location: location || "Unknown",
+        date: date || new Date().getFullYear().toString(),
+        description: description || "",
+      }
+      newPhotos.push(newPhoto)
+    } else {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Generate unique filename
-    const ext = path.extname(file.name)
-    const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}${ext}`
-    const filepath = path.join(GALLERY_DIR, filename)
-
-    // Save file
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await fs.writeFile(filepath, buffer)
-
-    // Create photo entry
-    const photos = await readPhotos()
-    const newPhoto: Photo = {
-      id: Date.now().toString(),
-      src: `/images/gallery/${filename}`,
-      title,
-      location,
-      date,
-      description,
-    }
-
-    photos.unshift(newPhoto)
+    // Add new photos to the beginning
+    photos.unshift(...newPhotos)
     await writePhotos(photos)
 
-    return NextResponse.json(newPhoto, { status: 201 })
+    return NextResponse.json(newPhotos, { status: 201 })
   } catch (error) {
     console.error("Error creating photo:", error)
     return NextResponse.json({ error: "Failed to create photo" }, { status: 500 })
@@ -137,14 +180,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Photo not found" }, { status: 404 })
     }
 
-    // Delete file if it's a local gallery image
-    if (photo.src.startsWith("/images/gallery/")) {
-      const filename = path.basename(photo.src)
-      const filepath = path.join(GALLERY_DIR, filename)
+    // Delete image blob if it's a Vercel Blob URL
+    if (photo.src.includes("vercel-storage.com") || photo.src.includes("blob.vercel-storage.com")) {
       try {
-        await fs.unlink(filepath)
+        await del(photo.src)
       } catch {
-        // File may not exist, continue anyway
+        // Ignore delete errors for image
       }
     }
 

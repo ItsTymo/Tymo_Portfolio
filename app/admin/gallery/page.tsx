@@ -5,20 +5,30 @@ import { AdminAuth } from "@/components/admin/admin-auth"
 import { PhotoUpload } from "@/components/admin/photo-upload"
 import { PhotoForm } from "@/components/admin/photo-form"
 import { PhotoTable } from "@/components/admin/photo-table"
+import { BatchUpload } from "@/components/admin/batch-upload"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import { Plus, ArrowLeft } from "lucide-react"
+import { Plus, ArrowLeft, Upload } from "lucide-react"
 import Link from "next/link"
 import type { Photo, PhotoFormData } from "@/lib/photos"
+
+interface FileWithMetadata {
+  file: File
+  preview: string
+  title: string
+  location: string
+  date: string
+  description: string
+}
 
 export default function AdminGalleryPage() {
   const [adminKey, setAdminKey] = useState("")
@@ -106,14 +116,58 @@ export default function AdminGalleryPage() {
         throw new Error("Failed to add photo")
       }
 
-      const newPhoto = await response.json()
-      setPhotos([newPhoto, ...photos])
+      const newPhotos = await response.json()
+      const photosArray = Array.isArray(newPhotos) ? newPhotos : [newPhotos]
+      setPhotos([...photosArray, ...photos])
       setIsAddOpen(false)
       resetForm()
       toast.success("Photo added successfully")
     } catch (error) {
       console.error("Failed to add photo:", error)
       toast.error("Failed to add photo")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleBatchUpload = async (files: FileWithMetadata[]) => {
+    setIsSubmitting(true)
+    try {
+      const formDataToSend = new FormData()
+
+      files.forEach((f) => {
+        formDataToSend.append("images", f.file)
+        formDataToSend.append("titles", f.title)
+        formDataToSend.append("locations", f.location)
+        formDataToSend.append("dates", f.date)
+        formDataToSend.append("descriptions", f.description)
+      })
+
+      const response = await fetch("/api/photos", {
+        method: "POST",
+        headers: {
+          "x-admin-key": adminKey,
+        },
+        body: formDataToSend,
+      })
+
+      if (response.status === 401) {
+        toast.error("Invalid admin key. Please log out and try again.")
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to upload photos")
+      }
+
+      const newPhotos = await response.json()
+      const photosArray = Array.isArray(newPhotos) ? newPhotos : [newPhotos]
+      setPhotos([...photosArray, ...photos])
+      setIsAddOpen(false)
+      toast.success(`${photosArray.length} photo(s) uploaded successfully`)
+    } catch (error) {
+      console.error("Failed to upload photos:", error)
+      toast.error("Failed to upload photos")
     } finally {
       setIsSubmitting(false)
     }
@@ -213,41 +267,65 @@ export default function AdminGalleryPage() {
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Photo
+                    Add Photos
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-md">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Add New Photo</DialogTitle>
+                    <DialogTitle>Add Photos</DialogTitle>
                     <DialogDescription>
-                      Upload an image and fill in the details.
+                      Upload one or multiple images to the gallery.
                     </DialogDescription>
                   </DialogHeader>
 
-                  <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                    <PhotoUpload onFileSelect={setSelectedFile} />
-                    {formErrors.image && (
-                      <p className="text-sm text-destructive">{formErrors.image}</p>
-                    )}
-                    <PhotoForm
-                      data={formData}
-                      onChange={setFormData}
-                      errors={formErrors}
-                    />
-                  </div>
+                  <Tabs defaultValue="batch" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="batch">
+                        <Upload className="w-4 h-4 mr-2" />
+                        Batch Upload
+                      </TabsTrigger>
+                      <TabsTrigger value="single">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Single Photo
+                      </TabsTrigger>
+                    </TabsList>
 
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsAddOpen(false)}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddPhoto} disabled={isSubmitting}>
-                      {isSubmitting ? "Adding..." : "Add Photo"}
-                    </Button>
-                  </DialogFooter>
+                    <TabsContent value="batch" className="mt-4">
+                      <BatchUpload
+                        onUpload={handleBatchUpload}
+                        isUploading={isSubmitting}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="single" className="mt-4 space-y-4">
+                      <PhotoUpload onFileSelect={setSelectedFile} />
+                      {formErrors.image && (
+                        <p className="text-sm text-destructive">
+                          {formErrors.image}
+                        </p>
+                      )}
+                      <PhotoForm
+                        data={formData}
+                        onChange={setFormData}
+                        errors={formErrors}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsAddOpen(false)}
+                          disabled={isSubmitting}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleAddPhoto}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? "Adding..." : "Add Photo"}
+                        </Button>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </DialogContent>
               </Dialog>
             </div>
