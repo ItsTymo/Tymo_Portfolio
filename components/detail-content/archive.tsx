@@ -1,12 +1,15 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import type { Photo } from "@/lib/photos"
+
+type SortOption = "newest" | "oldest" | "title-az" | "title-za"
 
 export function ArchiveContent() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [sortBy, setSortBy] = useState<SortOption>("newest")
 
   useEffect(() => {
     async function fetchPhotos() {
@@ -25,26 +28,37 @@ export function ArchiveContent() {
     fetchPhotos()
   }, [])
 
+  const sortedPhotos = useMemo(() => {
+    return [...photos].sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return b.date.localeCompare(a.date)
+        case "oldest":
+          return a.date.localeCompare(b.date)
+        case "title-az":
+          return a.title.localeCompare(b.title)
+        case "title-za":
+          return b.title.localeCompare(a.title)
+        default:
+          return 0
+      }
+    })
+  }, [photos, sortBy])
+
   const closeModal = () => setSelectedPhoto(null)
 
   const goToPrevious = () => {
     if (!selectedPhoto) return
-    const currentIndex = photos.findIndex(p => p.id === selectedPhoto.id)
-    const prevIndex = currentIndex === 0 ? photos.length - 1 : currentIndex - 1
-    setPhotos((currentPhotos) => {
-      setSelectedPhoto(currentPhotos[prevIndex])
-      return currentPhotos
-    })
+    const currentIndex = sortedPhotos.findIndex(p => p.id === selectedPhoto.id)
+    const prevIndex = currentIndex === 0 ? sortedPhotos.length - 1 : currentIndex - 1
+    setSelectedPhoto(sortedPhotos[prevIndex])
   }
 
   const goToNext = () => {
     if (!selectedPhoto) return
-    const currentIndex = photos.findIndex(p => p.id === selectedPhoto.id)
-    const nextIndex = currentIndex === photos.length - 1 ? 0 : currentIndex + 1
-    setPhotos((currentPhotos) => {
-      setSelectedPhoto(currentPhotos[nextIndex])
-      return currentPhotos
-    })
+    const currentIndex = sortedPhotos.findIndex(p => p.id === selectedPhoto.id)
+    const nextIndex = currentIndex === sortedPhotos.length - 1 ? 0 : currentIndex + 1
+    setSelectedPhoto(sortedPhotos[nextIndex])
   }
 
   return (
@@ -58,6 +72,22 @@ export function ArchiveContent() {
         Moments captured from trails, peaks, and wild places. Click any photo to explore.
       </p>
 
+      {/* Sort Controls */}
+      {photos.length > 0 && (
+        <div className="flex justify-center">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="text-sm bg-transparent border border-[#8b6f47]/30 rounded px-3 py-1.5 font-scroll-body text-neutral-700 focus:outline-none focus:border-[#8b6f47]/60"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="title-az">Title A-Z</option>
+            <option value="title-za">Title Z-A</option>
+          </select>
+        </div>
+      )}
+
       {/* Photo Grid */}
       {isLoading ? (
         <div className="text-center py-8 text-neutral-500 font-scroll-body">
@@ -69,7 +99,7 @@ export function ArchiveContent() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pb-4">
-          {photos.map((photo) => (
+          {sortedPhotos.map((photo) => (
             <button
               key={photo.id}
               onClick={() => setSelectedPhoto(photo)}

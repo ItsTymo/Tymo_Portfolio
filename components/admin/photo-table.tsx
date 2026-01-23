@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import {
   Table,
   TableBody,
@@ -19,8 +19,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { PhotoForm } from "./photo-form"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react"
 import type { Photo, PhotoFormData } from "@/lib/photos"
+
+type SortField = "title" | "location" | "date"
+type SortDirection = "asc" | "desc"
 
 interface PhotoTableProps {
   photos: Photo[]
@@ -39,6 +42,45 @@ export function PhotoTable({ photos, onUpdate, onDelete, isLoading }: PhotoTable
     description: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [sortField, setSortField] = useState<SortField | null>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
+
+  const sortedPhotos = useMemo(() => {
+    if (!sortField) return photos
+
+    return [...photos].sort((a, b) => {
+      let comparison = 0
+      if (sortField === "title") {
+        comparison = a.title.localeCompare(b.title)
+      } else if (sortField === "location") {
+        comparison = a.location.localeCompare(b.location)
+      } else if (sortField === "date") {
+        comparison = a.date.localeCompare(b.date)
+      }
+      return sortDirection === "asc" ? comparison : -comparison
+    })
+  }, [photos, sortField, sortDirection])
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc")
+      } else {
+        setSortField(null)
+        setSortDirection("asc")
+      }
+    } else {
+      setSortField(field)
+      setSortDirection("asc")
+    }
+  }
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1 opacity-50" />
+    return sortDirection === "asc"
+      ? <ArrowUp className="w-4 h-4 ml-1" />
+      : <ArrowDown className="w-4 h-4 ml-1" />
+  }
 
   const handleEditClick = (photo: Photo) => {
     setEditingPhoto(photo)
@@ -96,14 +138,38 @@ export function PhotoTable({ photos, onUpdate, onDelete, isLoading }: PhotoTable
         <TableHeader>
           <TableRow>
             <TableHead className="w-20">Image</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead className="hidden md:table-cell">Location</TableHead>
-            <TableHead className="hidden md:table-cell">Date</TableHead>
+            <TableHead>
+              <button
+                className="flex items-center hover:text-foreground transition-colors"
+                onClick={() => handleSort("title")}
+              >
+                Title
+                <SortIcon field="title" />
+              </button>
+            </TableHead>
+            <TableHead className="hidden md:table-cell">
+              <button
+                className="flex items-center hover:text-foreground transition-colors"
+                onClick={() => handleSort("location")}
+              >
+                Location
+                <SortIcon field="location" />
+              </button>
+            </TableHead>
+            <TableHead className="hidden md:table-cell">
+              <button
+                className="flex items-center hover:text-foreground transition-colors"
+                onClick={() => handleSort("date")}
+              >
+                Date
+                <SortIcon field="date" />
+              </button>
+            </TableHead>
             <TableHead className="w-24">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {photos.map((photo) => (
+          {sortedPhotos.map((photo) => (
             <TableRow key={photo.id}>
               <TableCell>
                 <img
