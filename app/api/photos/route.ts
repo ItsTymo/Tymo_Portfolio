@@ -1,20 +1,36 @@
 import { NextRequest, NextResponse } from "next/server"
-import { put, del, list } from "@vercel/blob"
+import { put, del, list, head } from "@vercel/blob"
 import { PhotosArraySchema, type Photo } from "@/lib/photos"
 
-const PHOTOS_METADATA_KEY = "photos-metadata.json"
+const PHOTOS_METADATA_PATH = "photos-metadata.json"
 
 async function readPhotos(): Promise<Photo[]> {
   try {
-    const { blobs } = await list({ prefix: PHOTOS_METADATA_KEY })
+    // List all blobs with the metadata prefix
+    const { blobs } = await list({ prefix: "photos-metadata" })
+
     if (blobs.length === 0) {
       return []
     }
-    // Get the most recent blob
+
+    // Sort by upload date and get the most recent
     const sortedBlobs = blobs.sort((a, b) =>
       new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
     )
-    const response = await fetch(sortedBlobs[0].url, { cache: "no-store" })
+
+    // Fetch with no-cache to ensure fresh data
+    const response = await fetch(sortedBlobs[0].url, {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    })
+
+    if (!response.ok) {
+      console.error("Failed to fetch metadata:", response.status)
+      return []
+    }
+
     const data = await response.json()
     return PhotosArraySchema.parse(data)
   } catch (error) {
@@ -24,12 +40,25 @@ async function readPhotos(): Promise<Photo[]> {
 }
 
 async function writePhotos(photos: Photo[]): Promise<void> {
-  // Write new metadata first
-  await put(PHOTOS_METADATA_KEY, JSON.stringify(photos, null, 2), {
-    access: "public",
-    contentType: "application/json",
-    addRandomSuffix: false,
-  })
+  // Delete ALL old metadata blobs first to avoid duplicates
+  try {
+    const { blobs } = await list({ prefix: "photos-metadata" })
+    await Promise.all(blobs.map((blob) => del(blob.url)))
+  } catch (error) {
+    console.error("Error deleting old metadata:", error)
+  }
+
+  // Write new metadata with a timestamp to ensure uniqueness
+  const blob = await put(
+    `photos-metadata-${Date.now()}.json`,
+    JSON.stringify(photos, null, 2),
+    {
+      access: "public",
+      contentType: "application/json",
+    }
+  )
+
+  console.log("Wrote metadata to:", blob.url)
 }
 
 function verifyAuth(request: NextRequest): boolean {
@@ -45,7 +74,11 @@ function generateId(): string {
 
 export async function GET() {
   const photos = await readPhotos()
-  return NextResponse.json(photos)
+  return NextResponse.json(photos, {
+    headers: {
+      "Cache-Control": "no-store, max-age=0",
+    },
+  })
 }
 
 export async function POST(request: NextRequest) {
@@ -72,6 +105,8 @@ export async function POST(request: NextRequest) {
 
     // Batch upload - upload all images in parallel
     if (files.length > 0 && titles.length > 0) {
+      console.log(`Batch uploading ${files.length} files`)
+
       const uploadPromises = files.map(async (f, i) => {
         if (!f || !titles[i]) return null
 
@@ -79,6 +114,8 @@ export async function POST(request: NextRequest) {
         const blob = await put(`gallery/${id}-${f.name}`, f, {
           access: "public",
         })
+
+        console.log(`Uploaded file ${i}: ${blob.url}`)
 
         return {
           id,
@@ -114,6 +151,8 @@ export async function POST(request: NextRequest) {
 
     // Read existing photos and add new ones
     const existingPhotos = await readPhotos()
+    console.log(`Existing photos: ${existingPhotos.length}, New photos: ${newPhotos.length}`)
+
     const allPhotos = [...newPhotos, ...existingPhotos]
     await writePhotos(allPhotos)
 
@@ -182,11 +221,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete image blob if it's a Vercel Blob URL
-    if (photo.src.includes("vercel-storage.com") || photo.src.includes("blob.vercel-storage.com")) {
+    if (photo.src.includes("blob.vercel-storage.com")) {
       try {
         await del(photo.src)
-      } catch {
-        // Ignore delete errors for image
+        console.log(`Deleted image: ${photo.src}`)
+      } catch (error) {
+        console.error("Error deleting image:", error)
       }
     }
 
