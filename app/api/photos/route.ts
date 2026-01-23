@@ -1,37 +1,37 @@
 import { NextRequest, NextResponse } from "next/server"
-import { put, del, list, head } from "@vercel/blob"
+import { put, del, list } from "@vercel/blob"
 import { PhotosArraySchema, type Photo } from "@/lib/photos"
-
-const PHOTOS_METADATA_PATH = "photos-metadata.json"
 
 async function readPhotos(): Promise<Photo[]> {
   try {
     // List all blobs with the metadata prefix
-    const { blobs } = await list({ prefix: "photos-metadata" })
+    const result = await list({ prefix: "photos-metadata" })
+    console.log("Listed blobs:", result.blobs.length, result.blobs.map(b => b.pathname))
 
-    if (blobs.length === 0) {
+    if (result.blobs.length === 0) {
+      console.log("No metadata blobs found")
       return []
     }
 
     // Sort by upload date and get the most recent
-    const sortedBlobs = blobs.sort((a, b) =>
+    const sortedBlobs = result.blobs.sort((a, b) =>
       new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
     )
+
+    console.log("Fetching metadata from:", sortedBlobs[0].url)
 
     // Fetch with no-cache to ensure fresh data
     const response = await fetch(sortedBlobs[0].url, {
       cache: "no-store",
-      headers: {
-        "Cache-Control": "no-cache",
-      },
     })
 
     if (!response.ok) {
-      console.error("Failed to fetch metadata:", response.status)
+      console.error("Failed to fetch metadata:", response.status, response.statusText)
       return []
     }
 
     const data = await response.json()
+    console.log("Parsed photos count:", data.length)
     return PhotosArraySchema.parse(data)
   } catch (error) {
     console.error("Error reading photos:", error)
@@ -45,6 +45,7 @@ async function writePhotos(photos: Photo[]): Promise<void> {
   try {
     const result = await list({ prefix: "photos-metadata" })
     oldBlobs = result.blobs
+    console.log("Found", oldBlobs.length, "existing metadata blobs")
   } catch (error) {
     console.error("Error listing old metadata:", error)
   }
@@ -58,7 +59,7 @@ async function writePhotos(photos: Photo[]): Promise<void> {
       contentType: "application/json",
     }
   )
-  console.log("Wrote metadata to:", newBlob.url)
+  console.log("Wrote metadata to:", newBlob.url, "with", photos.length, "photos")
 
   // Only delete old blobs AFTER new one is successfully written
   if (oldBlobs.length > 0) {
@@ -83,7 +84,9 @@ function generateId(): string {
 }
 
 export async function GET() {
+  console.log("GET /api/photos called")
   const photos = await readPhotos()
+  console.log("Returning", photos.length, "photos")
   return NextResponse.json(photos, {
     headers: {
       "Cache-Control": "no-store, max-age=0",

@@ -1,6 +1,5 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
-import Link from "next/link"
 import type { Photo } from "@/lib/photos"
 
 type SortOption = "newest" | "oldest" | "title-az" | "title-za"
@@ -120,15 +119,6 @@ export function ArchiveContent() {
         </div>
       )}
 
-      {/* Subtle Admin Link */}
-      <div className="text-center pt-2">
-        <Link
-          href="/admin/gallery"
-          className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
-        >
-          Manage Gallery
-        </Link>
-      </div>
 
       {/* Fullscreen Modal */}
       {selectedPhoto && (
