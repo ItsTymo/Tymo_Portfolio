@@ -10,7 +10,11 @@ async function readPhotos(): Promise<Photo[]> {
     if (blobs.length === 0) {
       return []
     }
-    const response = await fetch(blobs[0].url)
+    // Get the most recent blob
+    const sortedBlobs = blobs.sort((a, b) =>
+      new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+    )
+    const response = await fetch(sortedBlobs[0].url, { cache: "no-store" })
     const data = await response.json()
     return PhotosArraySchema.parse(data)
   } catch (error) {
@@ -20,20 +24,11 @@ async function readPhotos(): Promise<Photo[]> {
 }
 
 async function writePhotos(photos: Photo[]): Promise<void> {
-  // Delete old metadata blob if it exists
-  try {
-    const { blobs } = await list({ prefix: PHOTOS_METADATA_KEY })
-    for (const blob of blobs) {
-      await del(blob.url)
-    }
-  } catch {
-    // Ignore delete errors
-  }
-
-  // Write new metadata
+  // Write new metadata first
   await put(PHOTOS_METADATA_KEY, JSON.stringify(photos, null, 2), {
     access: "public",
     contentType: "application/json",
+    addRandomSuffix: false,
   })
 }
 
@@ -42,6 +37,10 @@ function verifyAuth(request: NextRequest): boolean {
   const adminKey = process.env.ADMIN_KEY
   if (!adminKey) return false
   return authHeader === adminKey
+}
+
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 }
 
 export async function GET() {
@@ -69,52 +68,54 @@ export async function POST(request: NextRequest) {
     const date = formData.get("date") as string
     const description = formData.get("description") as string
 
-    const photos = await readPhotos()
     const newPhotos: Photo[] = []
 
-    // Batch upload
+    // Batch upload - upload all images in parallel
     if (files.length > 0 && titles.length > 0) {
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i]
-        if (!f || !titles[i]) continue
+      const uploadPromises = files.map(async (f, i) => {
+        if (!f || !titles[i]) return null
 
-        const blob = await put(`gallery/${Date.now()}-${i}-${f.name}`, f, {
+        const id = generateId()
+        const blob = await put(`gallery/${id}-${f.name}`, f, {
           access: "public",
         })
 
-        const newPhoto: Photo = {
-          id: `${Date.now()}-${i}`,
+        return {
+          id,
           src: blob.url,
           title: titles[i] || f.name.replace(/\.[^/.]+$/, ""),
           location: locations[i] || "Unknown",
           date: dates[i] || new Date().getFullYear().toString(),
           description: descriptions[i] || "",
-        }
-        newPhotos.push(newPhoto)
-      }
+        } as Photo
+      })
+
+      const results = await Promise.all(uploadPromises)
+      newPhotos.push(...results.filter((p): p is Photo => p !== null))
     }
     // Single upload (backward compatible)
     else if (file && title) {
-      const blob = await put(`gallery/${Date.now()}-${file.name}`, file, {
+      const id = generateId()
+      const blob = await put(`gallery/${id}-${file.name}`, file, {
         access: "public",
       })
 
-      const newPhoto: Photo = {
-        id: Date.now().toString(),
+      newPhotos.push({
+        id,
         src: blob.url,
         title,
         location: location || "Unknown",
         date: date || new Date().getFullYear().toString(),
         description: description || "",
-      }
-      newPhotos.push(newPhoto)
+      })
     } else {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Add new photos to the beginning
-    photos.unshift(...newPhotos)
-    await writePhotos(photos)
+    // Read existing photos and add new ones
+    const existingPhotos = await readPhotos()
+    const allPhotos = [...newPhotos, ...existingPhotos]
+    await writePhotos(allPhotos)
 
     return NextResponse.json(newPhotos, { status: 201 })
   } catch (error) {
