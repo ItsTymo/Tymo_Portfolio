@@ -79,9 +79,6 @@ export default function AdminGalleryPage() {
     if (!formData.date.trim()) {
       errors.date = "Date is required"
     }
-    if (!formData.description.trim()) {
-      errors.description = "Description is required"
-    }
 
     setFormErrors(errors)
     return Object.keys(errors).length === 0
