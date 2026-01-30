@@ -12,12 +12,14 @@ const songs = [
 // Max volume cap (0.25 = 25% of full volume)
 const MAX_VOLUME = 0.25
 
-// Get a random song, excluding the last played song
-function getRandomSong(lastSong: string | null): string {
-  const availableSongs = lastSong
-    ? songs.filter(song => song !== lastSong)
-    : songs
-  return availableSongs[Math.floor(Math.random() * availableSongs.length)]
+// Shuffle array using Fisher-Yates
+function shuffleArray<T>(arr: T[]): T[] {
+  const shuffled = [...arr]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
 }
 
 export function MusicPlayer() {
@@ -27,7 +29,7 @@ export function MusicPlayer() {
   const audioContextRef = useRef<AudioContext | null>(null)
   const gainNodeRef = useRef<GainNode | null>(null)
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null)
-  const lastSongRef = useRef<string | null>(null)
+  const queueRef = useRef<string[]>([])
   const hasStartedRef = useRef(false)
 
   const initAudioContext = useCallback(() => {
@@ -47,14 +49,20 @@ export function MusicPlayer() {
     gainNode.connect(ctx.destination)
   }, [])
 
+  const getNextFromQueue = useCallback(() => {
+    if (queueRef.current.length === 0) {
+      queueRef.current = shuffleArray(songs)
+    }
+    return queueRef.current.shift()!
+  }, [])
+
   const playNextSong = useCallback(() => {
     if (!audioRef.current) return
 
-    const nextSong = getRandomSong(lastSongRef.current)
-    lastSongRef.current = nextSong
+    const nextSong = getNextFromQueue()
     audioRef.current.src = nextSong
     audioRef.current.play().catch(console.error)
-  }, [])
+  }, [getNextFromQueue])
 
   const startMusic = useCallback(() => {
     if (hasStartedRef.current || !audioRef.current) return
@@ -73,9 +81,9 @@ export function MusicPlayer() {
   }, [initAudioContext])
 
   useEffect(() => {
-    // Initialize audio element
-    const initialSong = getRandomSong(null)
-    lastSongRef.current = initialSong
+    // Initialize audio element with first song from shuffled queue
+    queueRef.current = shuffleArray(songs)
+    const initialSong = queueRef.current.shift()!
     audioRef.current = new Audio(initialSong)
 
     // When song ends, play next random song (no repeat)
