@@ -9,8 +9,8 @@ const songs = [
   "/System_of_a_Down_-_Toxicity_-_Medieval_Style_-_Bardcore.mp3",
 ]
 
-// Max volume cap (0.3 = 30% of full volume, roughly -10dB)
-const MAX_VOLUME = 0.3
+// Max volume cap (0.25 = 25% of full volume)
+const MAX_VOLUME = 0.25
 
 // Get a random song, excluding the last played song
 function getRandomSong(lastSong: string | null): string {
@@ -21,11 +21,31 @@ function getRandomSong(lastSong: string | null): string {
 }
 
 export function MusicPlayer() {
-  const [volume, setVolume] = useState(0.1)
+  const [volume, setVolume] = useState(0.15)
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const gainNodeRef = useRef<GainNode | null>(null)
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null)
   const lastSongRef = useRef<string | null>(null)
   const hasStartedRef = useRef(false)
+
+  const initAudioContext = useCallback(() => {
+    if (audioContextRef.current || !audioRef.current) return
+
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+    audioContextRef.current = ctx
+
+    const gainNode = ctx.createGain()
+    gainNode.gain.value = volume * MAX_VOLUME
+    gainNodeRef.current = gainNode
+
+    const source = ctx.createMediaElementSource(audioRef.current)
+    sourceNodeRef.current = source
+
+    source.connect(gainNode)
+    gainNode.connect(ctx.destination)
+  }, [])
 
   const playNextSong = useCallback(() => {
     if (!audioRef.current) return
@@ -40,22 +60,29 @@ export function MusicPlayer() {
     if (hasStartedRef.current || !audioRef.current) return
     hasStartedRef.current = true
 
+    initAudioContext()
+
+    // Resume audio context if suspended (required by browsers)
+    if (audioContextRef.current?.state === "suspended") {
+      audioContextRef.current.resume()
+    }
+
     audioRef.current.play().then(() => {
       setIsPlaying(true)
     }).catch(console.error)
-  }, [])
+  }, [initAudioContext])
 
   useEffect(() => {
     // Initialize audio element
     const initialSong = getRandomSong(null)
     lastSongRef.current = initialSong
     audioRef.current = new Audio(initialSong)
-    audioRef.current.volume = volume * MAX_VOLUME
 
     // When song ends, play next random song (no repeat)
     audioRef.current.addEventListener('ended', playNextSong)
 
     // Try autoplay immediately
+    initAudioContext()
     audioRef.current.play().then(() => {
       hasStartedRef.current = true
       setIsPlaying(true)
@@ -82,22 +109,31 @@ export function MusicPlayer() {
         audioRef.current.pause()
         audioRef.current = null
       }
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {})
+        audioContextRef.current = null
+      }
     }
-  }, [playNextSong, startMusic])
+  }, [playNextSong, startMusic, initAudioContext])
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume * MAX_VOLUME
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = volume * MAX_VOLUME
     }
   }, [volume])
 
   const togglePlay = () => {
     if (!audioRef.current) return
 
+    initAudioContext()
+
     if (isPlaying) {
       audioRef.current.pause()
       setIsPlaying(false)
     } else {
+      if (audioContextRef.current?.state === "suspended") {
+        audioContextRef.current.resume()
+      }
       audioRef.current.play().then(() => {
         setIsPlaying(true)
       }).catch(console.error)
