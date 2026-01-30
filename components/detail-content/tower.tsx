@@ -9,8 +9,7 @@ export function TowerContent() {
       </div>
 
       <p className="font-scroll-body text-foreground leading-relaxed text-center">
-        I'm open to Community/Social Manager roles, collaborations, and hearing about exciting projects. Let's build something cool together! Reach out
-        if you'd like to connect.
+        Connect with me at the links below, and let's build something cool!
       </p>
 
       <div className="p-6 rounded-lg bg-[#4a5d2a]/15 border-2 border-[#4a5d2a]/30">
@@ -28,7 +27,7 @@ export function TowerContent() {
         </p>
         <div className="flex flex-wrap gap-3 justify-center">
           <a
-            href="https://twitter.com"
+            href="https://x.com/itstymo"
             target="_blank"
             rel="noopener noreferrer"
             className="font-scroll-body px-4 py-2.5 rounded-lg bg-[#4a5d2a] text-white font-medium text-sm hover:bg-[#5a6d3a] transition-colors border border-[#3a4d1a] shadow-sm"
@@ -36,7 +35,7 @@ export function TowerContent() {
             X
           </a>
           <a
-            href="https://linkedin.com"
+            href="https://linkedin.com/in/Tymo"
             target="_blank"
             rel="noopener noreferrer"
             className="font-scroll-body px-4 py-2.5 rounded-lg bg-[#0077B5] text-white font-medium text-sm hover:bg-[#005885] transition-colors border border-[#005070] shadow-sm"
@@ -44,7 +43,7 @@ export function TowerContent() {
             LinkedIn
           </a>
           <a
-            href="mailto:hello@example.com"
+            href="mailto:itstymo.eth@gmail.com"
             className="font-scroll-body px-4 py-2.5 rounded-lg bg-accent text-accent-foreground font-medium text-sm hover:bg-accent/90 transition-colors border border-[#3a2f1a] shadow-sm"
           >
             Email

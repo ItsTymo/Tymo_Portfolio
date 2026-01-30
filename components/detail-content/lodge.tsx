@@ -9,9 +9,8 @@ export function LodgeContent() {
       </div>
 
       <p className="font-scroll-body text-foreground leading-relaxed text-center">
-        Based in the Pacific Northwest, I'm a tech-native social strategist and community builder. I'm passionate about tech, Web3,
-        telling great stories. I blend strategic thinking with hands-on execution, crafting engaging experiences
-        for top communities.
+        Based in the Pacific Northwest, I'm a tech-native social strategist and community builder. I'm passionate about tech, Web3, and
+        telling great stories.
       </p>
 
       <div className="p-6 rounded-lg bg-[#d9cdb8]/20 border-2 border-[#8b6f47]/30">
@@ -52,7 +51,7 @@ export function LodgeContent() {
             rel="noopener noreferrer"
             className="font-scroll-body px-4 py-2 rounded-lg bg-[#4a5d2a] text-white font-medium text-sm hover:bg-[#5a6d3a] transition-colors border border-[#3a4d1a] shadow-sm"
           >
-            X / Twitter
+            X
           </a>
           <a
             href="https://www.linkedin.com/in/tymo/"

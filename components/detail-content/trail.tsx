@@ -28,7 +28,7 @@ export function TrailContent() {
 
       <p className="font-scroll-body text-foreground leading-relaxed text-center">
         Current expeditions and ongoing projects in my life. Each quest represents an opportunity to build, grow,
-        and create something meaningful bigger than myself.
+        and create something bigger than myself.
       </p>
 
       <div className="space-y-3">
