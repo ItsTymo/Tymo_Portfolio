@@ -330,7 +330,7 @@ export default function AdminGalleryPage() {
               </Dialog>
             </div>
 
-            <div className="border rounded-lg">
+            <div className="border rounded-lg max-h-[70vh] overflow-y-auto">
               <PhotoTable
                 photos={photos}
                 onUpdate={handleUpdatePhoto}
