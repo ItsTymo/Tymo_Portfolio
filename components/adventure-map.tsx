@@ -31,8 +31,8 @@ export function AdventureMap({ selectedLocation, onLocationSelect }: AdventureMa
   }
 
   return (
-    <div className="relative w-screen h-screen flex items-start pt-2 md:items-center md:pt-0 justify-center bg-[#d5c8b5] overflow-hidden">
-      <div className="relative w-[95vw] aspect-video md:w-full md:h-full md:aspect-auto md:max-w-[177.78vh] md:max-h-[56.25vw]">
+    <div className="relative w-screen h-screen flex items-center justify-center bg-[#d5c8b5] overflow-hidden">
+      <div className="relative w-full h-full max-w-[177.78vh] max-h-[56.25vw]">
         <img
           src="/images/Career_of_Tymo_Map.png"
           alt="The Career of Tymo - Fantasy Map"
