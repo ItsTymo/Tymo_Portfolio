@@ -4,7 +4,7 @@ import { AdventureMap } from "@/components/adventure-map"
 import { ScrollPopup } from "@/components/scroll-popup"
 import { FogReveal } from "@/components/fog-reveal"
 import { MusicPlayer } from "@/components/music-player"
-import { RotatePrompt } from "@/components/rotate-prompt"
+
 
 type LocationId = "lodge" | "trail" | "archive" | "river" | "tower"
 
@@ -23,7 +23,7 @@ export default function Home() {
     <main className="min-h-screen w-full bg-[#d5c8b5] flex items-center justify-center overflow-hidden">
       <FogReveal />
       <MusicPlayer />
-      <RotatePrompt />
+
       <AdventureMap selectedLocation={selectedLocation} onLocationSelect={handleLocationSelect} />
       {selectedLocation && <ScrollPopup location={selectedLocation} onClose={handleClosePopup} />}
     </main>
