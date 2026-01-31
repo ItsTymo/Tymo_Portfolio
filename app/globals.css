@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Uncial+Antiqua&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Uncial+Antiqua&family=UnifrakturMaguntia&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -157,15 +157,25 @@
   }
 }
 
-/* Enhanced modal entrance animation with smoother timing */
-@keyframes modal-enter {
-  from {
+/* Enhanced modal entrance - scroll unroll effect */
+@keyframes scroll-unroll {
+  0% {
     opacity: 0;
-    transform: scale(0.92);
+    transform: scaleY(0.05) scaleX(0.8);
+    filter: brightness(0.7);
   }
-  to {
+  40% {
     opacity: 1;
-    transform: scale(1);
+    transform: scaleY(1.02) scaleX(0.98);
+    filter: brightness(1);
+  }
+  60% {
+    transform: scaleY(0.98) scaleX(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1) scaleX(1);
+    filter: brightness(1);
   }
 }
 
@@ -173,9 +183,177 @@
   animation: fade-in 0.3s ease-out;
 }
 
-/* Replaced scale-in with modal-enter for better scroll popup animation */
 .animate-modal-enter {
-  animation: modal-enter 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: scroll-unroll 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: center center;
+}
+
+/* Parchment modal styling */
+.scroll-modal {
+  background:
+    /* Aged stain spots */
+    radial-gradient(ellipse at 20% 15%, rgba(139, 111, 71, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 85%, rgba(139, 111, 71, 0.1) 0%, transparent 45%),
+    radial-gradient(ellipse at 60% 40%, rgba(160, 130, 80, 0.06) 0%, transparent 40%),
+    /* Paper fiber texture */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 111, 71, 0.02) 2px,
+      rgba(139, 111, 71, 0.02) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3px,
+      rgba(139, 111, 71, 0.015) 3px,
+      rgba(139, 111, 71, 0.015) 6px
+    ),
+    /* Base parchment gradient */
+    linear-gradient(
+      168deg,
+      #f5ecd7 0%,
+      #ece3cc 20%,
+      #e8dcc3 40%,
+      #f0e6d0 60%,
+      #e6dabb 80%,
+      #ede4ce 100%
+    );
+  box-shadow:
+    /* Outer shadow */
+    0 8px 40px rgba(40, 30, 15, 0.4),
+    0 2px 12px rgba(40, 30, 15, 0.3),
+    /* Inner aged vignette */
+    inset 0 0 60px rgba(139, 111, 71, 0.15),
+    inset 0 0 120px rgba(90, 74, 46, 0.08);
+}
+
+/* Ornate corner decorations */
+.scroll-corner {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  pointer-events: none;
+  z-index: 15;
+  color: #8b6f47;
+  opacity: 0.6;
+  font-size: 28px;
+  line-height: 1;
+  font-family: serif;
+}
+
+.scroll-corner-tl { top: 6px; left: 10px; }
+.scroll-corner-tr { top: 6px; right: 10px; transform: scaleX(-1); }
+.scroll-corner-bl { bottom: 6px; left: 10px; transform: scaleY(-1); }
+.scroll-corner-br { bottom: 6px; right: 10px; transform: scale(-1, -1); }
+
+/* Scroll roll tops and bottoms */
+.scroll-roll-top,
+.scroll-roll-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 20px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.scroll-roll-top {
+  top: 0;
+  background:
+    linear-gradient(to bottom,
+      #6b5530 0%,
+      #8b6f47 30%,
+      #a08050 50%,
+      #8b6f47 70%,
+      transparent 100%
+    );
+  border-radius: 12px 12px 0 0;
+  box-shadow:
+    0 2px 8px rgba(40, 30, 15, 0.3),
+    inset 0 2px 4px rgba(255, 240, 200, 0.2),
+    inset 0 -1px 2px rgba(40, 30, 15, 0.3);
+}
+
+.scroll-roll-bottom {
+  bottom: 0;
+  background:
+    linear-gradient(to top,
+      #6b5530 0%,
+      #8b6f47 30%,
+      #a08050 50%,
+      #8b6f47 70%,
+      transparent 100%
+    );
+  border-radius: 0 0 12px 12px;
+  box-shadow:
+    0 -2px 8px rgba(40, 30, 15, 0.3),
+    inset 0 -2px 4px rgba(255, 240, 200, 0.2),
+    inset 0 1px 2px rgba(40, 30, 15, 0.3);
+}
+
+/* Decorative border with double-line effect */
+.scroll-inner-border {
+  position: absolute;
+  inset: 24px 12px;
+  border: 1px solid rgba(139, 111, 71, 0.25);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Blackletter header font for modal titles */
+.font-scroll-header {
+  font-family: "UnifrakturMaguntia", "IM Fell English SC", "Uncial Antiqua", serif;
+  letter-spacing: 0.04em;
+}
+
+/* Close button - wax seal style */
+.scroll-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #c4553a, #8b2e1a 60%, #6b1e0e 100%);
+  color: #f5e6c8;
+  border: 2px solid #6b1e0e;
+  box-shadow:
+    0 2px 6px rgba(40, 20, 10, 0.4),
+    inset 0 1px 2px rgba(255, 200, 150, 0.3);
+  font-family: "IM Fell English SC", serif;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.scroll-close-btn:hover {
+  background: radial-gradient(circle at 35% 35%, #d4654a, #9b3e2a 60%, #7b2e1e 100%);
+  transform: scale(1.08);
+  box-shadow:
+    0 3px 8px rgba(40, 20, 10, 0.5),
+    inset 0 1px 2px rgba(255, 200, 150, 0.4);
+}
+
+/* Aged edge effect on scrollbar */
+.scroll-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scroll-content::-webkit-scrollbar-track {
+  background: rgba(139, 111, 71, 0.1);
+  border-radius: 5px;
+}
+
+.scroll-content::-webkit-scrollbar-thumb {
+  background: rgba(139, 111, 71, 0.35);
+  border-radius: 5px;
+  border: 2px solid rgba(236, 227, 204, 0.5);
+}
+
+.scroll-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 111, 71, 0.5);
 }
 
 /* Fog reveal animations */

@@ -15,8 +15,6 @@ interface ScrollPopupProps {
 export function ScrollPopup({ location, onClose }: ScrollPopupProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
 
-  console.log(`[v0] ScrollPopup rendered for location: ${location}`)
-
   const renderContent = () => {
     switch (location) {
       case "lodge":
@@ -33,7 +31,6 @@ export function ScrollPopup({ location, onClose }: ScrollPopupProps) {
   }
 
   const handleClose = () => {
-    console.log("[v0] Closing scroll popup")
     onClose()
   }
 
@@ -41,7 +38,7 @@ export function ScrollPopup({ location, onClose }: ScrollPopupProps) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity animate-fade-in"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity animate-fade-in"
         onClick={handleClose}
         aria-hidden="true"
       />
@@ -54,26 +51,35 @@ export function ScrollPopup({ location, onClose }: ScrollPopupProps) {
         aria-labelledby="scroll-title"
         className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 pointer-events-none"
       >
-        <div className="relative w-full max-w-2xl h-[85vh] pointer-events-auto flex flex-col overflow-hidden rounded-3xl bg-card shadow-2xl border-4 border-[#8b6f47] animate-modal-enter">
-          {/* Scroll decorative top */}
-          <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#5a4a2e] to-transparent opacity-50 rounded-t-3xl pointer-events-none z-10" />
+        <div className="scroll-modal relative w-full max-w-2xl h-[85vh] pointer-events-auto flex flex-col overflow-hidden rounded-xl border-[3px] border-[#8b6f47] animate-modal-enter">
+          {/* Scroll roll top */}
+          <div className="scroll-roll-top" />
 
-          {/* Close button */}
+          {/* Ornate corner decorations */}
+          <span className="scroll-corner scroll-corner-tl" aria-hidden="true">&#x2767;</span>
+          <span className="scroll-corner scroll-corner-tr" aria-hidden="true">&#x2767;</span>
+          <span className="scroll-corner scroll-corner-bl" aria-hidden="true">&#x2767;</span>
+          <span className="scroll-corner scroll-corner-br" aria-hidden="true">&#x2767;</span>
+
+          {/* Inner decorative border */}
+          <div className="scroll-inner-border" />
+
+          {/* Close button - wax seal */}
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-accent text-accent-foreground hover:bg-accent/80 transition-colors font-serif font-bold text-lg focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+            className="scroll-close-btn absolute top-5 right-5 z-20 focus:outline-none focus:ring-2 focus:ring-[#8b6f47] focus:ring-offset-2 focus:ring-offset-[#f5ecd7]"
             aria-label="Close scroll popup"
           >
-            ✕
+            &#x2715;
           </button>
 
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+          <div className="scroll-content flex-1 overflow-y-auto px-8 py-10 md:px-10 md:py-12 space-y-6">
             {renderContent()}
           </div>
 
-          {/* Scroll decorative bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#5a4a2e] to-transparent opacity-50 rounded-b-3xl pointer-events-none z-10" />
+          {/* Scroll roll bottom */}
+          <div className="scroll-roll-bottom" />
         </div>
       </div>
     </>
