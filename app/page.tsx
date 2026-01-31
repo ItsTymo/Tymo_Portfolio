@@ -6,7 +6,7 @@ import { FogReveal } from "@/components/fog-reveal"
 import { MusicPlayer } from "@/components/music-player"
 
 
-type LocationId = "lodge" | "trail" | "archive" | "river" | "tower"
+type LocationId = "lodge" | "trail" | "archive" | "river" | "tower" | "tavern"
 
 export default function Home() {
   const [selectedLocation, setSelectedLocation] = useState<LocationId | null>(null)

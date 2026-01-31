@@ -6,6 +6,7 @@ import { TrailContent } from "./detail-content/trail"
 import { ArchiveContent } from "./detail-content/archive"
 import { RiverContent } from "./detail-content/river"
 import { TowerContent } from "./detail-content/tower"
+import { TavernContent } from "./detail-content/tavern"
 
 interface ScrollPopupProps {
   location: LocationId
@@ -27,6 +28,8 @@ export function ScrollPopup({ location, onClose }: ScrollPopupProps) {
         return <RiverContent />
       case "tower":
         return <TowerContent />
+      case "tavern":
+        return <TavernContent />
     }
   }
 

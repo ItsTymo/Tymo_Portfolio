@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 
-export type LocationId = "lodge" | "trail" | "archive" | "river" | "tower"
+export type LocationId = "lodge" | "trail" | "archive" | "river" | "tower" | "tavern"
 
 interface LocationConfig {
   id: LocationId
@@ -19,6 +19,7 @@ const locations: LocationConfig[] = [
   { id: "lodge", label: "The Lodge", x: "38%", y: "62%", width: "18%", height: "14%" },
   { id: "tower", label: "Signal Tower", x: "20%", y: "70%", width: "16%", height: "16%" },
   { id: "archive", label: "Scenic Lookout", x: "78%", y: "72%", width: "22%", height: "14%" },
+  { id: "tavern", label: "The Tavern", x: "27%", y: "36%", width: "16%", height: "12%" },
 ]
 
 const ZOOM_SCALE = 3
@@ -30,6 +31,7 @@ function getLocationCoords(id: LocationId): { x: number; y: number } {
     lodge: { x: 38, y: 62 },
     tower: { x: 20, y: 70 },
     archive: { x: 78, y: 72 },
+    tavern: { x: 27, y: 36 },
   }
   return coords[id]
 }
